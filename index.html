@@ -663,12 +663,29 @@ function switchSection(s){
 
 // ── LIVE TV ───────────────────────────────
 async function loadLive(){
+  ge('grid-live').innerHTML='<div class="loading-msg"><div class="spin2"></div>Carregando canais...</div>';
   try{
-    const[cats,streams]=await Promise.all([apiFetch('get_live_categories'),apiFetch('get_live_streams')]);
+    // Tenta API Xtream primeiro
+    let streams=[], cats=[];
+    try{
+      [cats,streams]=await Promise.all([apiFetch('get_live_categories'),apiFetch('get_live_streams')]);
+    }catch(e){}
+    // Se API falhar, usa M3U direto
+    if(!streams||streams.length===0){
+      const m3uChannels=await loadM3U();
+      streams=m3uChannels.map((ch,i)=>({
+        name:ch.name, stream_icon:ch.stream_icon,
+        stream_id:i, category_id:ch.category_name,
+        direct_url:ch.url
+      }));
+      cats=m3uToCategories(m3uChannels);
+    }
     ST.live.cats=cats||[];ST.live.all=streams||[];ST.live.filtered=streams||[];
     renderCats('cats-live',cats,cat=>setCat('live',cat));
     renderLive(ST.live.filtered);
-  }catch(e){ge('grid-live').innerHTML='<div class="empty-msg">⚠️ Erro ao carregar canais.</div>';}
+  }catch(e){
+    ge('grid-live').innerHTML='<div class="empty-msg">⚠️ Erro ao carregar canais. Verifique sua conexão.</div>';
+  }
 }
 
 function renderLive(list){
@@ -687,7 +704,8 @@ function renderLive(list){
 function playLive(idx){
   const ch=ST.live.filtered[idx];if(!ch)return;
   ST.player.type='live';ST.player.item=ch;ST.live.curIdx=idx;
-  const url=API.live(ch.stream_id,ST.streamType);
+  // Usa URL direta do M3U se disponível, senão monta via API
+  const url=ch.direct_url||API.live(ch.stream_id,ST.streamType);
   openPlayer(url,ch.name,'📺 Ao Vivo');
 }
 function prevCh(){if(ST.player.type==='live')playLive(Math.max(0,ST.live.curIdx-1));}
@@ -895,35 +913,83 @@ function handleKey(e){
 }
 
 // ── API ───────────────────────────────────
-// Proxies CORS para contornar bloqueio do servidor IPTV
+// Proxies CORS - múltiplos para máxima compatibilidade
 const PROXIES = [
   url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => url // direto como fallback
+  url => `https://thingproxy.freeboard.io/fetch/${url}`,
+  url => url
 ];
 
-async function fetchWithProxy(url) {
+async function fetchWithProxy(url, isJson=true) {
   for (const proxy of PROXIES) {
     try {
       const proxied = proxy(url);
-      const r = await fetch(proxied, { signal: AbortSignal.timeout(12000) });
+      const r = await fetch(proxied, { signal: AbortSignal.timeout(15000),
+        headers: {'Accept': 'application/json, text/plain, */*'} });
       if (!r.ok) continue;
       const text = await r.text();
-      if (!text || text.trim() === '') continue;
-      return JSON.parse(text);
+      if (!text || text.trim().length < 3) continue;
+      if (!isJson) return text;
+      try { return JSON.parse(text); } catch(e) { continue; }
     } catch(e) { continue; }
   }
-  throw new Error('Todos os proxies falharam');
+  throw new Error('Falha ao conectar');
+}
+
+// Carrega canais via M3U (mais compatível que API)
+async function loadM3U() {
+  const m3uUrl = `${API.url}/get.php?username=${API.user}&password=${API.pass}&type=m3u_plus&output=hls`;
+  const text = await fetchWithProxy(m3uUrl, false);
+  return parseM3U(text);
+}
+
+function parseM3U(text) {
+  const lines = text.split('\n');
+  const channels = [];
+  let current = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith('#EXTINF')) {
+      current = {};
+      const nameMatch = line.match(/,(.+)$/);
+      current.name = nameMatch ? nameMatch[1].trim() : 'Canal';
+      const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+      current.stream_icon = logoMatch ? logoMatch[1] : '';
+      const groupMatch = line.match(/group-title="([^"]+)"/);
+      current.category_name = groupMatch ? groupMatch[1] : 'Geral';
+      const idMatch = line.match(/tvg-id="([^"]+)"/);
+      current.stream_id = idMatch ? idMatch[1] : String(channels.length);
+    } else if (line.startsWith('http') && current) {
+      current.url = line;
+      channels.push(current);
+      current = null;
+    }
+  }
+  return channels;
+}
+
+function m3uToCategories(channels) {
+  const cats = {};
+  channels.forEach(ch => {
+    const g = ch.category_name || 'Geral';
+    if (!cats[g]) cats[g] = { category_id: g, category_name: g };
+  });
+  return Object.values(cats);
 }
 
 async function apiFetch(action){
   const url = `${API.base()}&action=${action}`;
-  const d = await fetchWithProxy(url);
-  return Array.isArray(d)?d:(d.data||d);
+  try {
+    const d = await fetchWithProxy(url, true);
+    return Array.isArray(d)?d:(d.data||d);
+  } catch(e) {
+    return [];
+  }
 }
 async function apiFetchRaw(action){
   const url = `${API.base()}&action=${action}`;
-  return fetchWithProxy(url);
+  try { return await fetchWithProxy(url, true); } catch(e) { return {}; }
 }
 function safeB64(s){try{return atob(s);}catch(e){return s;}}
 </script>
