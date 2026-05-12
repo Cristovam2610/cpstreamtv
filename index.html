@@ -616,25 +616,16 @@ async function doLogin(){
   err.classList.add('hide');
   if(!url||!user||!pass){err.textContent='Preencha todos os campos.';err.classList.remove('hide');return;}
   btn.textContent='Conectando...';btn.disabled=true;
-  try{
-    const testUrl=`${url}/player_api.php?username=${user}&password=${pass}&action=get_live_categories`;
-    let ok=false;
-    for(const proxy of PROXIES){
-      try{
-        const pu=proxy(testUrl);
-        const r=await fetch(pu,{signal:AbortSignal.timeout(10000)});
-        if(r.ok){const t=await r.text();if(t&&t.length>2){ok=true;break;}}
-      }catch(e2){continue;}
-    }
-    if(!ok)throw new Error();
-    API.url=url;API.user=user;API.pass=pass;
-    save('iptv_creds',{url,user,pass});
-    startApp();
-  }catch(e){
-    err.textContent='Erro ao conectar. Verifique a URL e as credenciais.';
+  // Salva direto e testa ao carregar (CORS impede teste prévio)
+  if(!url||!user||!pass){
+    err.textContent='Preencha todos os campos.';
     err.classList.remove('hide');
     btn.textContent='▶ Entrar';btn.disabled=false;
+    return;
   }
+  API.url=url;API.user=user;API.pass=pass;
+  save('iptv_creds',{url,user,pass});
+  startApp();
 }
 
 function doLogout(){save('iptv_creds',null);location.reload();}
@@ -664,28 +655,50 @@ function switchSection(s){
 // ── LIVE TV ───────────────────────────────
 async function loadLive(){
   ge('grid-live').innerHTML='<div class="loading-msg"><div class="spin2"></div>Carregando canais...</div>';
-  try{
-    // Tenta API Xtream primeiro
-    let streams=[], cats=[];
-    try{
-      [cats,streams]=await Promise.all([apiFetch('get_live_categories'),apiFetch('get_live_streams')]);
-    }catch(e){}
-    // Se API falhar, usa M3U direto
-    if(!streams||streams.length===0){
-      const m3uChannels=await loadM3U();
-      streams=m3uChannels.map((ch,i)=>({
-        name:ch.name, stream_icon:ch.stream_icon,
-        stream_id:i, category_id:ch.category_name,
-        direct_url:ch.url
-      }));
-      cats=m3uToCategories(m3uChannels);
+  // URLs M3U diretas do fornecedor (sem necessidade de API)
+  const m3uUrls=[
+    `${API.url}/get.php?username=${API.user}&password=${API.pass}&type=m3u_plus&output=hls`,
+    `${API.url}/get.php?username=${API.user}&password=${API.pass}&type=m3u_plus&output=mpegts`,
+  ];
+  // Proxies CORS públicos
+  const proxyList=[
+    u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u=>`https://cors-anywhere.herokuapp.com/${u}`,
+    u=>`https://thingproxy.freeboard.io/fetch/${u}`,
+  ];
+  let channels=[];
+  outer:
+  for(const m3uUrl of m3uUrls){
+    for(const mkProxy of proxyList){
+      try{
+        const proxied=mkProxy(m3uUrl);
+        const r=await fetch(proxied,{signal:AbortSignal.timeout(18000)});
+        if(!r.ok) continue;
+        const txt=await r.text();
+        if(!txt||!txt.includes('#EXTINF')) continue;
+        channels=parseM3U(txt);
+        if(channels.length>0) break outer;
+      }catch(e){continue;}
     }
-    ST.live.cats=cats||[];ST.live.all=streams||[];ST.live.filtered=streams||[];
-    renderCats('cats-live',cats,cat=>setCat('live',cat));
-    renderLive(ST.live.filtered);
-  }catch(e){
-    ge('grid-live').innerHTML='<div class="empty-msg">⚠️ Erro ao carregar canais. Verifique sua conexão.</div>';
   }
+  if(channels.length===0){
+    ge('grid-live').innerHTML=`<div class="empty-msg">
+      ⚠️ Não foi possível carregar os canais automaticamente.<br><br>
+      <small>O servidor IPTV bloqueia requisições externas (CORS).<br>
+      Tente acessar direto pelo navegador da Smart TV Samsung.</small>
+    </div>`;
+    return;
+  }
+  const streams=channels.map((ch,i)=>({
+    name:ch.name, stream_icon:ch.stream_icon,
+    stream_id:i, category_id:ch.category_name,
+    direct_url:ch.url
+  }));
+  const cats=m3uToCategories(channels);
+  ST.live.cats=cats;ST.live.all=streams;ST.live.filtered=streams;
+  renderCats('cats-live',cats,cat=>setCat('live',cat));
+  renderLive(ST.live.filtered);
 }
 
 function renderLive(list){
