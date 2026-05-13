@@ -289,7 +289,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .loading-msg{padding:60px;text-align:center;color:var(--text2);font-size:14px}
 .loading-msg .spin2{width:34px;height:34px;border:3px solid var(--bg3);
   border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 16px}
-.empty-msg{padding:60px;text-align:center;color:var(--text3);font-size:14px;line-height:1.8}
+.empty-msg{padding:40px 20px;text-align:center;color:var(--text3);font-size:14px;line-height:1.8;word-break:normal;white-space:normal;max-width:100%}
 .hide{display:none!important}
 </style>
 </head>
@@ -602,16 +602,27 @@ async function fetchTimeout(url, opts={}, ms=15000){
 }
 
 // ── PROXIES CORS ──────────────────────────
-// Tentativa direta primeiro (TV Samsung pode não ter CORS restrito no browser app)
-const PROXIES = [
-  url => url,  // ✅ direto primeiro — funciona na TV mesmo com CORS
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => `https://thingproxy.freeboard.io/fetch/${url}`,
-];
+// ✅ FIX MIXED CONTENT: GitHub Pages é HTTPS; servidor IPTV é HTTP.
+// Browsers bloqueiam HTTP chamado de HTTPS (Mixed Content).
+// Detectamos e SEMPRE usamos proxy nesse caso.
+function buildProxies(targetUrl){
+  const pageIsHttps  = location.protocol === 'https:';
+  const targetIsHttp = targetUrl.startsWith('http://');
+  const needsProxy   = pageIsHttps && targetIsHttp;
+  const list = [];
+  if(!needsProxy) list.push(u => u); // direto só se não há mixed content
+  list.push(
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u => `https://thingproxy.freeboard.io/fetch/${u}`,
+    u => `https://cors.sh/${u}`
+  );
+  return list;
+}
 
 async function fetchWithProxy(url, isJson=true){
-  for(const mkProxy of PROXIES){
+  const proxies = buildProxies(url);
+  for(const mkProxy of proxies){
     try{
       const proxied = mkProxy(url);
       const r = await fetchTimeout(proxied, {
@@ -748,10 +759,17 @@ async function loadLive(){
   }catch(e){}
 
   if(!channels.length){
+    const mixedContent = location.protocol==='https:' && API.url.startsWith('http://');
     ge('grid-live').innerHTML=`<div class="empty-msg">
       ⚠️ Não foi possível carregar os canais.<br><br>
-      <small>Verifique a URL do servidor, usuário e senha.<br>
-      Se o problema persistir, verifique se o servidor está online.</small>
+      ${mixedContent
+        ? `<b style="color:var(--accent2)">Causa provável: Mixed Content</b><br>
+           A página está em HTTPS mas o servidor é HTTP.<br>
+           Os proxies também falharam. Tente acessar o app via HTTP:<br>
+           <a href="http://cristovam2610.github.io/cpstreamtv/" style="color:var(--accent2)">
+           Versão HTTP</a> — ou hospede em um servidor HTTP.`
+        : `Verifique a URL do servidor, usuário e senha.<br>
+           Se o problema persistir, verifique se o servidor está online.`}
     </div>`;
     return;
   }
