@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#0a0a0f"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="CPStreamTV"/>
+<meta name="application-name" content="CPStreamTV"/>
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22CPStreamTV%22%2C%22short_name%22%3A%22CPStreamTV%22%2C%22description%22%3A%22Player+IPTV+para+Smart+TV+e+PC%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%230a0a0f%22%2C%22theme_color%22%3A%22%230a0a0f%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg+xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'+width%3D'192'+height%3D'192'%253E%253Crect+width%3D'192'+height%3D'192'+rx%3D'32'+fill%3D'%230a0a0f'%2F%253E%253Ctext+x%3D'50%25'+y%3D'55%25'+font-family%3D'Arial'+font-size%3D'72'+font-weight%3D'bold'+text-anchor%3D'middle'+dominant-baseline%3D'middle'+fill%3D'%234361ee'%253ECP%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D"/>
 <title>CPStreamTV</title>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
 <style>
@@ -599,6 +606,15 @@ html,body{
       <div id="pl-info">
         <div id="pl-title">Carregando...</div>
         <div id="pl-sub"></div>
+        <!-- EPG now/next display -->
+        <div id="pl-epg" style="margin-top:6px;display:none;">
+          <div id="pl-epg-now" style="font-size:14px;color:rgba(255,255,255,.5);letter-spacing:.5px;text-transform:uppercase;">Agora</div>
+          <div id="pl-epg-title" style="font-size:20px;color:rgba(255,255,255,.9);font-weight:600;margin-top:2px;"></div>
+          <div id="pl-epg-time" style="font-size:13px;color:rgba(255,255,255,.45);margin-top:3px;"></div>
+          <div id="pl-epg-bar-wrap" style="margin-top:6px;background:rgba(255,255,255,.15);border-radius:3px;height:4px;width:260px;">
+            <div id="pl-epg-bar-fill" style="height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width 1s;"></div>
+          </div>
+        </div>
       </div>
       <div id="pl-actions">
         <button class="pl-action-btn" id="fav-btn" onclick="toggleFavCurrent()">☆ Favorito</button>
@@ -667,11 +683,43 @@ html,body{
 <!-- SHORTCUT MODAL -->
 <div id="sc-modal">
   <div class="sc-box">
-    <h2>📌 FIXAR NA SAMSUNG TV</h2>
-    <div class="sc-step"><div class="sc-n">1</div><div class="sc-txt">Pressione <b>HOME</b> no controle e abra o <b>Navegador Internet</b></div></div>
-    <div class="sc-step"><div class="sc-n">2</div><div class="sc-txt">Acesse a URL do app e pressione <b>☰ Menu</b> do navegador</div></div>
-    <div class="sc-step"><div class="sc-n">3</div><div class="sc-txt">Selecione <b>"Adicionar à Tela Inicial"</b></div></div>
-    <div class="sc-step"><div class="sc-n">4</div><div class="sc-txt">O ícone aparece entre seus Apps — pressione OK para abrir!</div></div>
+    <h2>📌 INSTALAR CPStreamTV</h2>
+
+    <div style="display:flex;gap:8px;margin-bottom:4px;" id="sc-tabs">
+      <button class="season-btn active" onclick="scTab('samsung')" id="sct-samsung">📺 Samsung TV</button>
+      <button class="season-btn" onclick="scTab('chrome')"  id="sct-chrome">🖥 Chrome/PC</button>
+      <button class="season-btn" onclick="scTab('iphone')"  id="sct-iphone">📱 iPhone/iPad</button>
+      <button class="season-btn" onclick="scTab('android')" id="sct-android">🤖 Android</button>
+    </div>
+
+    <div id="sc-body-samsung">
+      <div class="sc-step"><div class="sc-n">1</div><div class="sc-txt">Pressione <b>HOME</b> no controle e abra o <b>Navegador Internet</b></div></div>
+      <div class="sc-step"><div class="sc-n">2</div><div class="sc-txt">Acesse a URL deste arquivo e pressione <b>☰ Menu</b> do navegador</div></div>
+      <div class="sc-step"><div class="sc-n">3</div><div class="sc-txt">Selecione <b>"Adicionar à Tela Inicial"</b> — o ícone CPStreamTV aparece entre os Apps</div></div>
+    </div>
+
+    <div id="sc-body-chrome" style="display:none;">
+      <div class="sc-step"><div class="sc-n">1</div><div class="sc-txt">No Chrome, clique no ícone <b>⊕ Instalar</b> na barra de endereço (canto direito)</div></div>
+      <div class="sc-step"><div class="sc-n">2</div><div class="sc-txt">Clique em <b>"Instalar"</b> na janela que aparecer — abre como app separado</div></div>
+      <div class="sc-step"><div class="sc-n">3</div><div class="sc-txt">Ou: Menu <b>⋮ → Salvar e compartilhar → Criar atalho</b> → marcar "Abrir como janela"</div></div>
+      <div class="sc-step" style="background:rgba(67,97,238,.1);border-color:rgba(67,97,238,.3);">
+        <div class="sc-n" style="background:var(--blue);">💡</div>
+        <div class="sc-txt">O app já está configurado como <b>PWA</b> — ao instalar abre em tela cheia sem barra do browser</div>
+      </div>
+    </div>
+
+    <div id="sc-body-iphone" style="display:none;">
+      <div class="sc-step"><div class="sc-n">1</div><div class="sc-txt">Abra no <b>Safari</b> (obrigatório — Chrome no iOS não suporta PWA)</div></div>
+      <div class="sc-step"><div class="sc-n">2</div><div class="sc-txt">Toque no botão <b>Compartilhar ↑</b> na barra inferior</div></div>
+      <div class="sc-step"><div class="sc-n">3</div><div class="sc-txt">Role e toque em <b>"Adicionar à Tela de Início"</b> → <b>Adicionar</b></div></div>
+    </div>
+
+    <div id="sc-body-android" style="display:none;">
+      <div class="sc-step"><div class="sc-n">1</div><div class="sc-txt">Abra no <b>Chrome</b> para Android</div></div>
+      <div class="sc-step"><div class="sc-n">2</div><div class="sc-txt">Toque em <b>⋮ Menu → Adicionar à tela inicial</b></div></div>
+      <div class="sc-step"><div class="sc-n">3</div><div class="sc-txt">Toque em <b>Instalar</b> ou <b>Adicionar</b> — ícone CPStreamTV aparece na home</div></div>
+    </div>
+
     <button class="sc-ok" onclick="hideScModal()">Entendido ✓</button>
   </div>
 </div>
@@ -987,6 +1035,8 @@ function renderChannels(list) {
   document.getElementById('vod-grid-wrap').style.display = 'none';
   const grid = document.getElementById('ch-grid');
   grid.innerHTML = '';
+  // Cache all live channels for favorites
+  if (SECTION === 'live' && list.length) cacheLiveChannels(list);
   if (!list.length) {
     grid.innerHTML = '<div class="grid-msg"><div class="g-icon">📭</div><p>Nenhum canal encontrado</p></div>';
     return;
@@ -1057,17 +1107,19 @@ function showFavsSection() {
   document.getElementById('vod-grid-wrap').style.display = 'none';
   const grid = document.getElementById('ch-grid');
   grid.innerHTML = '';
+
   if (!favorites.length) {
     grid.innerHTML = '<div class="grid-msg"><div class="g-icon">⭐</div><p>Sem favoritos ainda.<br>Pressione <b>F</b> num canal ao vivo.</p></div>';
     document.getElementById('item-count').textContent = '0 itens';
     return;
   }
-  // We need live data – if we have it, filter; otherwise show stored names
+
   const favChs = favorites.map(sid => {
-    const found = allItems.find(c => String(c.stream_id) === sid);
-    return found || { stream_id: sid, name: 'Canal ' + sid, stream_icon: '' };
+    // Use runtime cache first, then localStorage cache, then fallback
+    return getLiveChannelById(sid) || { stream_id: sid, name: 'Canal ' + sid, stream_icon: '' };
   });
-  document.getElementById('item-count').textContent = favChs.length + ' itens';
+
+  document.getElementById('item-count').textContent = favChs.length + ' favoritos';
   favChs.forEach((ch, i) => {
     const card = document.createElement('div');
     card.className = 'ch-card fav';
@@ -1255,7 +1307,10 @@ function playLive(ch) {
   playerItem = ch;
   setPlayerInfo(ch.name, '', ch.stream_icon, true);
   updateFavBtn();
+  hideEPG();
   openPlayer(liveUrls(ch.stream_id));
+  // Load EPG after short delay to not block stream start
+  setTimeout(() => loadAndShowEPG(ch.stream_id), 1500);
 }
 
 function playMovie(item) {
@@ -1369,6 +1424,8 @@ function loadUrl(idx) {
 
 function backToApp() {
   stopPlayer();
+  hideEPG();
+  clearTimeout(epgTimer);
   document.getElementById('player-page').classList.remove('show');
 }
 
@@ -1540,6 +1597,30 @@ function closeResume() { document.getElementById('resume-bar').classList.remove(
 // ═══════════════════════════════════════════════════
 // FAVORITES
 // ═══════════════════════════════════════════════════
+// Cache global de canais ao vivo para favoritos funcionarem em qualquer seção
+let liveChannelCache = {};  // sid -> channel object
+
+function cacheLiveChannels(channels) {
+  channels.forEach(ch => { liveChannelCache[String(ch.stream_id)] = ch; });
+  // Persist minimal data (name + icon) in localStorage
+  try {
+    const mini = {};
+    channels.forEach(ch => { mini[String(ch.stream_id)] = { name: ch.name, stream_icon: ch.stream_icon || '', num: ch.num }; });
+    localStorage.setItem('stv_ch_cache', JSON.stringify(mini));
+  } catch (e) {}
+}
+
+function getLiveChannelById(sid) {
+  // 1. Check runtime cache
+  if (liveChannelCache[sid]) return liveChannelCache[sid];
+  // 2. Check localStorage cache
+  try {
+    const mini = JSON.parse(localStorage.getItem('stv_ch_cache') || '{}');
+    if (mini[sid]) return { stream_id: sid, name: mini[sid].name, stream_icon: mini[sid].stream_icon, num: mini[sid].num };
+  } catch (e) {}
+  return null;
+}
+
 function loadFavs() {
   try { favorites = JSON.parse(localStorage.getItem('stv_favs') || '[]'); } catch { favorites = []; }
 }
@@ -1610,13 +1691,101 @@ if (window.tizen) {
 }
 
 // ═══════════════════════════════════════════════════
+// SHORTCUT TABS
+// ═══════════════════════════════════════════════════
+function scTab(name) {
+  ['samsung','chrome','iphone','android'].forEach(t => {
+    document.getElementById('sc-body-'+t).style.display = t === name ? '' : 'none';
+    document.getElementById('sct-'+t).classList.toggle('active', t === name);
+  });
+}
+
+// PWA install prompt — capture and show when user clicks install
+let pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  pwaPrompt = e;
+});
+
+// ═══════════════════════════════════════════════════
+// EPG — Electronic Program Guide
+// ═══════════════════════════════════════════════════
+let epgCache = {};  // stream_id -> {title, start, end, pct, next}
+let epgTimer  = null;
+
+async function fetchEPG(streamId) {
+  if (!streamId) return null;
+  // Use get_short_epg — returns current + next programs
+  try {
+    const data = await apiGet('get_short_epg', `&stream_id=${streamId}&limit=2`);
+    const listings = data?.epg_listings || [];
+    if (!listings.length) return null;
+
+    const now = Date.now() / 1000;
+    // titles are base64-encoded in Xtream Codes API
+    const decode = s => {
+      try { return atob(s); } catch { return s; }
+    };
+
+    const current = listings[0];
+    const next    = listings[1] || null;
+
+    const start = parseInt(current.start_timestamp);
+    const end   = parseInt(current.stop_timestamp);
+    const pct   = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
+
+    return {
+      title:     decode(current.title || ''),
+      start:     fmtTime24(start),
+      end:       fmtTime24(end),
+      pct,
+      nextTitle: next ? decode(next.title || '') : '',
+      nextStart: next ? fmtTime24(parseInt(next.start_timestamp)) : '',
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function fmtTime24(ts) {
+  const d = new Date(ts * 1000);
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function showEPG(epg) {
+  const el = document.getElementById('pl-epg');
+  if (!epg || !epg.title) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  document.getElementById('pl-epg-title').textContent = epg.title;
+  document.getElementById('pl-epg-time').textContent  =
+    `${epg.start} – ${epg.end}` + (epg.nextTitle ? `  •  A seguir: ${epg.nextTitle} ${epg.nextStart}` : '');
+  document.getElementById('pl-epg-bar-fill').style.width = epg.pct + '%';
+}
+
+function hideEPG() {
+  document.getElementById('pl-epg').style.display = 'none';
+}
+
+async function loadAndShowEPG(streamId) {
+  clearTimeout(epgTimer);
+  hideEPG();
+  if (!streamId) return;
+  const cached = epgCache[streamId];
+  if (cached) { showEPG(cached); }
+  const epg = await fetchEPG(streamId);
+  if (epg) {
+    epgCache[streamId] = epg;
+    showEPG(epg);
+    // Refresh EPG every 5 minutes
+    epgTimer = setTimeout(() => loadAndShowEPG(streamId), 5 * 60 * 1000);
+  }
+}
+
+// ═══════════════════════════════════════════════════
 // SHORTCUT MODAL
 // ═══════════════════════════════════════════════════
 function showScModal() { document.getElementById('sc-modal').classList.add('show'); }
 function hideScModal() { document.getElementById('sc-modal').classList.remove('show'); }
-
-// ═══════════════════════════════════════════════════
-// NAVIGATION HISTORY — back button goes step by step
 // ═══════════════════════════════════════════════════
 // Steps: 'login' → 'home' → 'section' → 'category' → 'player' / 'vod-modal' / 'ep-modal'
 const navHistory = [];
