@@ -263,9 +263,10 @@ html,body{
   position:absolute;inset:0;
   background:linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 40%,rgba(0,0,0,.6) 100%);
   display:flex;flex-direction:column;justify-content:space-between;
-  padding:40px 56px;opacity:0;transition:opacity .3s;pointer-events:none;
+  padding:40px 56px;opacity:0;transition:opacity .3s;
+  pointer-events:none;  /* hidden = block no interaction */
 }
-#player-ui.vis{opacity:1;}
+#player-ui.vis{opacity:1;pointer-events:all;}  /* visible = fully interactive */
 
 #pl-top{display:flex;align-items:flex-start;gap:20px;}
 #pl-thumb{width:70px;height:70px;border-radius:10px;object-fit:contain;background:rgba(255,255,255,.06);flex-shrink:0;display:none;}
@@ -321,29 +322,42 @@ html,body{
 .resume-btn.sec{background:rgba(255,255,255,.15);}
 
 /* Seek bar */
-#pl-seek-area{display:none;}
-#pl-seek-area.show{display:block;}
-#pl-seek-track{
-  width:100%;height:5px;background:rgba(255,255,255,.2);
-  border-radius:3px;cursor:pointer;position:relative;margin-bottom:8px;
+#pl-seek-area{display:block;}  /* always visible when in player */
+#pl-seek-wrap-outer{
+  padding:10px 0 4px;cursor:pointer;
 }
-#pl-seek-fill{height:100%;background:var(--accent);border-radius:3px;pointer-events:none;}
+#pl-seek-track{
+  width:100%;height:8px;background:rgba(255,255,255,.25);
+  border-radius:4px;cursor:pointer;position:relative;margin-bottom:10px;
+  /* Expand clickable area */
+  padding:10px 0;margin:-10px 0;box-sizing:content-box;
+}
+#pl-seek-fill{
+  height:8px;background:var(--accent);border-radius:4px;
+  pointer-events:none;position:relative;top:0;
+}
 #pl-seek-dot{
-  position:absolute;top:50%;width:16px;height:16px;
+  position:absolute;top:50%;width:20px;height:20px;
   background:#fff;border-radius:50%;transform:translate(-50%,-50%);
   pointer-events:none;left:0%;
+  box-shadow:0 2px 8px rgba(0,0,0,.5);
 }
-#pl-time{font-size:14px;color:rgba(255,255,255,.6);text-align:right;}
+#pl-time{font-size:15px;color:rgba(255,255,255,.7);text-align:right;margin-top:4px;}
 
-#pl-bottom{display:flex;align-items:center;gap:16px;}
+#pl-controls-wrap{display:flex;flex-direction:column;gap:12px;}
+#pl-bottom{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .pl-btn{
-  width:56px;height:56px;background:rgba(255,255,255,.12);
-  border:1.5px solid rgba(255,255,255,.2);border-radius:50%;
+  width:56px;height:56px;background:rgba(255,255,255,.15);
+  border:1.5px solid rgba(255,255,255,.3);border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   font-size:22px;cursor:pointer;transition:all .15s;
+  user-select:none;-webkit-user-select:none;
+  /* Make sure clicks register */
+  position:relative;z-index:10;
 }
-.pl-btn:hover{background:var(--accent);border-color:var(--accent);}
-#pl-pos{font-size:16px;color:rgba(255,255,255,.5);margin-left:8px;}
+.pl-btn:hover{background:var(--accent);border-color:var(--accent);transform:scale(1.1);}
+.pl-btn:active{transform:scale(.95);background:var(--accent);}
+#pl-pos{font-size:16px;color:rgba(255,255,255,.5);margin-left:4px;}
 #pl-hint{margin-left:auto;font-size:13px;color:rgba(255,255,255,.4);text-align:right;line-height:1.9;}
 #pl-buf-bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.08);}
 #pl-buf-fill{height:100%;background:var(--accent);width:0%;transition:width .5s;}
@@ -596,9 +610,9 @@ html,body{
       <div id="pl-spinner"></div>
       <div id="pl-err-msg"></div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
+    <div id="pl-controls-wrap">
       <div id="pl-seek-area">
-        <div id="pl-seek-track" onclick="seekBarClick(event)">
+        <div id="pl-seek-track" id="seek-track-el" onclick="seekBarClick(event)">
           <div id="pl-seek-fill"></div>
           <div id="pl-seek-dot"></div>
         </div>
@@ -606,12 +620,13 @@ html,body{
       </div>
       <div id="pl-bottom">
         <div class="pl-btn" id="btn-prev" onclick="prevItem()" title="Canal anterior">⏮</div>
-        <div class="pl-btn" id="btn-rw"   onclick="seekRW()"   title="Retroceder 10s">⏪</div>
+        <div class="pl-btn" id="btn-rw"   onclick="seekRW()"   title="Retroceder 30s">⏪</div>
         <div class="pl-btn" id="btn-pp"   onclick="togglePlay()">⏸</div>
-        <div class="pl-btn" id="btn-ff"   onclick="seekFF()"   title="Avançar 10s">⏩</div>
+        <div class="pl-btn" id="btn-ff"   onclick="seekFF()"   title="Avançar 30s">⏩</div>
         <div class="pl-btn" id="btn-next" onclick="nextItem()" title="Próximo canal">⏭</div>
+        <div class="pl-btn" id="btn-fs"   onclick="toggleFullscreen()" title="Tela cheia">⛶</div>
         <div id="pl-pos"></div>
-        <div id="pl-hint">BACK = Voltar &nbsp;|&nbsp; F = Fav &nbsp;|&nbsp; Z = Zoom &nbsp;|&nbsp; ▲▼ = Canal &nbsp;|&nbsp; ◄► = ±10s</div>
+        <div id="pl-hint">F = Fav &nbsp;|&nbsp; Z = Zoom &nbsp;|&nbsp; ◄► = ±30s</div>
       </div>
     </div>
   </div>
@@ -1264,6 +1279,7 @@ function openPlayer(urls, resumePos) {
   showPlayerSpinner(true);
   showPlayerErr(false);
   closeResume();
+  bindVideoEvents();  // bind once per play session
 
   if (resumePos && resumePos > 5) {
     document.getElementById('resume-yes-btn').dataset.pos = resumePos;
@@ -1272,6 +1288,21 @@ function openPlayer(urls, resumePos) {
 
   loadUrl(0);
   showOverlay();
+}
+
+function bindVideoEvents() {
+  const v = document.getElementById('player-video');
+  v.onwaiting  = () => showPlayerSpinner(true);
+  v.onplaying  = () => { showPlayerSpinner(false); isPlaying = true; document.getElementById('btn-pp').textContent = '⏸'; };
+  v.onpause    = () => { isPlaying = false; document.getElementById('btn-pp').textContent = '▶'; };
+  v.ontimeupdate = () => {
+    updateSeekBar();
+    if (isVOD) autoSavePos();
+  };
+  v.onended = () => {
+    isPlaying = false;
+    document.getElementById('btn-pp').textContent = '▶';
+  };
 }
 
 function loadUrl(idx) {
@@ -1331,17 +1362,7 @@ function loadUrl(idx) {
     }
   }
 
-  // Video events
-  v.onwaiting = () => showPlayerSpinner(true);
-  v.onplaying = () => showPlayerSpinner(false);
-  v.ontimeupdate = () => {
-    if (v.buffered.length) {
-      const pct = (v.buffered.end(v.buffered.length - 1) / (v.duration || 1)) * 100;
-      document.getElementById('pl-buf-fill').style.width = Math.min(pct, 100) + '%';
-    }
-    updateSeekBar();
-    if (isVOD) autoSavePos();
-  };
+  // Video events bound once in bindVideoEvents() — not here
 }
 
 function backToApp() {
@@ -1401,14 +1422,26 @@ function nextItem() {
 }
 
 function showOverlay() {
-  document.getElementById('player-ui').classList.add('vis');
+  const ui = document.getElementById('player-ui');
+  ui.classList.add('vis');
   clearTimeout(overlayTimer);
-  overlayTimer = setTimeout(() =>
-    document.getElementById('player-ui').classList.remove('vis'), 5000);
+  overlayTimer = setTimeout(() => ui.classList.remove('vis'), 4000);
 }
 
+function toggleOverlay() {
+  const ui = document.getElementById('player-ui');
+  if (ui.classList.contains('vis')) {
+    ui.classList.remove('vis');
+    clearTimeout(overlayTimer);
+  } else {
+    showOverlay();
+  }
+}
+
+// Click on video itself (not on UI controls) toggles overlay
+document.getElementById('player-video').addEventListener('click', toggleOverlay);
+// Moving mouse over player always shows overlay
 document.getElementById('player-page').addEventListener('mousemove', showOverlay);
-document.getElementById('player-page').addEventListener('click', showOverlay);
 
 // ═══════════════════════════════════════════════════
 // ZOOM
@@ -1443,20 +1476,32 @@ function applyZoom() {
 // ═══════════════════════════════════════════════════
 function updateSeekBar() {
   const v = document.getElementById('player-video');
-  const wrap = document.getElementById('pl-seek-area');
-  if (!v.duration || isNaN(v.duration)) { wrap.classList.remove('show'); return; }
-  wrap.classList.add('show');
-  const pct = (v.currentTime / v.duration) * 100;
-  document.getElementById('pl-seek-fill').style.width = pct + '%';
-  document.getElementById('pl-seek-dot').style.left   = pct + '%';
-  document.getElementById('pl-time').textContent = fmtTime(v.currentTime) + ' / ' + fmtTime(v.duration);
+  const hasTime = v.duration && !isNaN(v.duration) && v.duration > 0;
+  // Show dot and fill only when there's a duration (VOD), hide for live
+  document.getElementById('pl-seek-dot').style.display  = hasTime ? 'block' : 'none';
+  document.getElementById('pl-seek-fill').style.width   = hasTime ? ((v.currentTime / v.duration) * 100) + '%' : '0%';
+  if (hasTime) {
+    document.getElementById('pl-seek-dot').style.left   = ((v.currentTime / v.duration) * 100) + '%';
+    document.getElementById('pl-time').textContent      = fmtTime(v.currentTime) + ' / ' + fmtTime(v.duration);
+  } else {
+    document.getElementById('pl-time').textContent = '';
+  }
+  // Buffer bar
+  if (v.buffered.length) {
+    const pct = (v.buffered.end(v.buffered.length - 1) / (v.duration || 1)) * 100;
+    document.getElementById('pl-buf-fill').style.width = Math.min(pct, 100) + '%';
+  }
 }
 
 function seekBarClick(e) {
   const v = document.getElementById('player-video');
-  if (!v.duration) return;
-  const r = e.currentTarget.getBoundingClientRect();
-  v.currentTime = ((e.clientX - r.left) / r.width) * v.duration;
+  if (!v.duration || isNaN(v.duration)) return;
+  const track = document.getElementById('pl-seek-track');
+  const r = track.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  v.currentTime = pct * v.duration;
+  e.stopPropagation();
+  showOverlay();
 }
 
 function fmtTime(s) {
@@ -1577,28 +1622,45 @@ const navHistory = [];
 function navPush(step) { navHistory.push(step); }
 
 function navBack() {
-  // Close modals first
-  if (document.getElementById('ep-modal').classList.contains('show'))  { closeEpModal(); return; }
-  if (document.getElementById('vod-modal').classList.contains('show')) { closeVodModal(); return; }
-  if (document.getElementById('sc-modal').classList.contains('show'))  { hideScModal(); return; }
-  if (document.getElementById('player-page').classList.contains('show')) { backToApp(); return; }
-  // On main app, go back through history
+  // Step 1: close episode modal
+  if (document.getElementById('ep-modal').classList.contains('show')) {
+    closeEpModal(); return;
+  }
+  // Step 2: close VOD modal
+  if (document.getElementById('vod-modal').classList.contains('show')) {
+    closeVodModal(); return;
+  }
+  // Step 3: close shortcut modal
+  if (document.getElementById('sc-modal').classList.contains('show')) {
+    hideScModal(); return;
+  }
+  // Step 4: exit player back to app
+  if (document.getElementById('player-page').classList.contains('show')) {
+    backToApp(); return;
+  }
+  // Step 5: go back through nav history (section/category)
   if (navHistory.length > 0) {
     const prev = navHistory.pop();
-    if (prev && prev.section) {
-      // Restore section+cat without re-fetching
-      SECTION = prev.section;
+    if (prev) {
+      SECTION  = prev.section;
       curCatId = prev.catId || 'all';
+      // Restore left nav highlight
       document.querySelectorAll('.hp-item').forEach(el =>
         el.classList.toggle('active', el.dataset.sec === SECTION)
       );
-      if (prev.items) {
+      // Restore category highlight
+      document.querySelectorAll('.cat-item').forEach(el =>
+        el.classList.toggle('active', el.dataset.id === curCatId)
+      );
+      if (prev.items && prev.items.length) {
         allItems = prev.items;
         visItems = prev.items;
         renderItems(visItems);
       }
     }
+    return;
   }
+  // Step 6: nothing left — show logout confirmation? Just stay on home.
 }
 
 // Wrap selectSection to push history
@@ -1608,10 +1670,25 @@ const _origSelectSection = selectSection;
 // ═══════════════════════════════════════════════════
 // FF / RW — Fast Forward & Rewind
 // ═══════════════════════════════════════════════════
+function toggleFullscreen() {
+  const el = document.getElementById('player-page');
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+    if (req) req.call(el);
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
+    if (exit) exit.call(document);
+  }
+  showOverlay();
+}
+
 function seekFF() {
   const v = document.getElementById('player-video');
-  if (v.duration && !isNaN(v.duration)) {
+  if (!isNaN(v.duration) && v.duration > 0) {
     v.currentTime = Math.min(v.currentTime + 30, v.duration);
+  } else {
+    // Live stream — try to skip forward in buffer
+    if (v.buffered.length) v.currentTime = Math.min(v.currentTime + 30, v.buffered.end(v.buffered.length - 1));
   }
   showOverlay();
 }
