@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>StreamTV</title>
+<title>CPStreamTV</title>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;700&family=Source+Sans+3:wght@300;400;600&display=swap');
@@ -40,7 +40,9 @@ html,body{
   font-family:'Oswald',sans-serif;font-size:80px;font-weight:700;
   letter-spacing:6px;color:var(--text);
 }
-.boot-logo em{color:var(--accent);font-style:normal;}
+.boot-logo em{color:#4361ee;font-style:normal;}
+.hp-logo em{color:#4361ee;font-style:normal;}
+.login-card h1 em{color:#4361ee;font-style:normal;}
 .boot-bar{width:300px;height:3px;background:#1e1e2e;border-radius:3px;overflow:hidden;}
 .boot-fill{height:100%;background:var(--accent);width:0%;transition:width .4s ease;}
 .boot-msg{font-size:18px;color:var(--muted);letter-spacing:1px;}
@@ -112,6 +114,7 @@ html,body{
   font-family:'Oswald',sans-serif;font-size:22px;letter-spacing:3px;
   color:var(--text);white-space:nowrap;
 }
+.hp-logo em{color:#4361ee;font-style:normal;}
 .hp-logo em{color:var(--accent);font-style:normal;}
 .hp-nav{flex:1;padding:12px 0;overflow-y:auto;scrollbar-width:none;}
 .hp-item{
@@ -476,7 +479,7 @@ html,body{
 
 <!-- BOOT -->
 <div id="boot">
-  <div class="boot-logo">STREAM<em>TV</em></div>
+  <div class="boot-logo"><em>CP</em>Stream<span style="-webkit-text-fill-color:var(--text);color:var(--text)">TV</span></div>
   <div class="boot-bar"><div class="boot-fill" id="bfill"></div></div>
   <div class="boot-msg" id="bmsg">Carregando...</div>
 </div>
@@ -484,11 +487,11 @@ html,body{
 <!-- LOGIN -->
 <div id="login-page">
   <div class="login-card">
-    <h1>STREAM<em>TV</em></h1>
+    <h1><em>CP</em>StreamTV</h1>
     <p>Acesse com seus dados do servidor IPTV</p>
     <div class="preset-btns">
-      <button class="preset-btn" onclick="setPreset('http://toppcard.fun')">toppcard.fun</button>
-      <button class="preset-btn" onclick="setPreset('http://streams4k.xyz')">streams4k.xyz</button>
+      <button class="preset-btn" onclick="setPreset('https://toppcard.fun')">toppcard.fun</button>
+      <button class="preset-btn" onclick="setPreset('https://streams4k.xyz')">streams4k.xyz</button>
     </div>
     <div class="form-field">
       <label>Servidor</label>
@@ -512,7 +515,7 @@ html,body{
 
   <!-- Home panel (section selector) -->
   <div id="home-panel">
-    <div class="hp-logo">STREAM<em>TV</em></div>
+    <div class="hp-logo"><em>CP</em>StreamTV</div>
     <div class="hp-nav">
       <div class="hp-item active" data-sec="live" onclick="selectSection('live')">
         <span class="hp-icon">📺</span>
@@ -586,7 +589,7 @@ html,body{
       <div id="pl-actions">
         <button class="pl-action-btn" id="fav-btn" onclick="toggleFavCurrent()">☆ Favorito</button>
         <button class="pl-action-btn" id="zoom-btn" onclick="cycleZoom()">⛶ Zoom</button>
-        <button class="pl-action-btn" onclick="backToApp()">← Voltar</button>
+        <button class="pl-action-btn" onclick="navBack()">← Voltar</button>
       </div>
     </div>
     <div id="pl-center">
@@ -602,11 +605,13 @@ html,body{
         <div id="pl-time">00:00 / 00:00</div>
       </div>
       <div id="pl-bottom">
-        <div class="pl-btn" id="btn-prev" onclick="prevItem()">⏮</div>
-        <div class="pl-btn" id="btn-pp" onclick="togglePlay()">⏸</div>
-        <div class="pl-btn" id="btn-next" onclick="nextItem()">⏭</div>
+        <div class="pl-btn" id="btn-prev" onclick="prevItem()" title="Canal anterior">⏮</div>
+        <div class="pl-btn" id="btn-rw"   onclick="seekRW()"   title="Retroceder 10s">⏪</div>
+        <div class="pl-btn" id="btn-pp"   onclick="togglePlay()">⏸</div>
+        <div class="pl-btn" id="btn-ff"   onclick="seekFF()"   title="Avançar 10s">⏩</div>
+        <div class="pl-btn" id="btn-next" onclick="nextItem()" title="Próximo canal">⏭</div>
         <div id="pl-pos"></div>
-        <div id="pl-hint">BACK = Voltar &nbsp;|&nbsp; F = Favorito &nbsp;|&nbsp; Z = Zoom &nbsp;|&nbsp; ▲▼ = Trocar canal</div>
+        <div id="pl-hint">BACK = Voltar &nbsp;|&nbsp; F = Fav &nbsp;|&nbsp; Z = Zoom &nbsp;|&nbsp; ▲▼ = Canal &nbsp;|&nbsp; ◄► = ±10s</div>
       </div>
     </div>
   </div>
@@ -716,7 +721,7 @@ window.addEventListener('load', async () => {
     showApp();
     selectSection('live');
   } else {
-    document.getElementById('f-server').value = 'http://toppcard.fun';
+    document.getElementById('f-server').value = 'https://toppcard.fun';
     showLogin();
   }
 });
@@ -837,6 +842,10 @@ const SECTION_META = {
 };
 
 async function selectSection(sec) {
+  // Push current state to history before switching
+  if (SECTION && SECTION !== sec && document.getElementById('app').classList.contains('show')) {
+    navHistory.push({ section: SECTION, catId: curCatId, items: allItems.slice() });
+  }
   SECTION = sec;
   curCatId = 'all';
   curItemIdx = 0;
@@ -898,6 +907,10 @@ function renderCats(cats) {
 }
 
 async function loadItems(catId) {
+  // Push current category state to history
+  if (curCatId !== catId && allItems.length) {
+    navHistory.push({ section: SECTION, catId: curCatId, items: allItems.slice() });
+  }
   curCatId = catId;
   curItemIdx = 0;
   document.getElementById('search-input').value = '';
@@ -1526,19 +1539,14 @@ document.addEventListener('keydown', e => {
   if (inPlayer) {
     e.preventDefault();
     showOverlay();
-    if (k === 'Escape' || k === 'Backspace') backToApp();
+    if (k === 'Escape' || k === 'Backspace') navBack();
     else if (k === ' ' || k === 'Enter') togglePlay();
     else if (k === 'ArrowUp')   prevItem();
     else if (k === 'ArrowDown') nextItem();
     else if (k === 'f' || k === 'F') toggleFavCurrent();
     else if (k === 'z' || k === 'Z') cycleZoom();
-    else if (k === 'ArrowRight' && isVOD) {
-      const v = document.getElementById('player-video');
-      if (v.duration) v.currentTime = Math.min(v.currentTime + 10, v.duration);
-    } else if (k === 'ArrowLeft' && isVOD) {
-      const v = document.getElementById('player-video');
-      v.currentTime = Math.max(v.currentTime - 10, 0);
-    }
+    else if (k === 'ArrowRight') seekFF();
+    else if (k === 'ArrowLeft')  seekRW();
   }
 });
 
@@ -1550,9 +1558,7 @@ function registerTizenKeys() {
 }
 if (window.tizen) {
   window.addEventListener('tizenhwkey', e => {
-    if (e.keyName === 'back') {
-      if (document.getElementById('player-page').classList.contains('show')) backToApp();
-    }
+    if (e.keyName === 'back') navBack();
   });
 }
 
@@ -1563,8 +1569,58 @@ function showScModal() { document.getElementById('sc-modal').classList.add('show
 function hideScModal() { document.getElementById('sc-modal').classList.remove('show'); }
 
 // ═══════════════════════════════════════════════════
-// UTILS
+// NAVIGATION HISTORY — back button goes step by step
 // ═══════════════════════════════════════════════════
+// Steps: 'login' → 'home' → 'section' → 'category' → 'player' / 'vod-modal' / 'ep-modal'
+const navHistory = [];
+
+function navPush(step) { navHistory.push(step); }
+
+function navBack() {
+  // Close modals first
+  if (document.getElementById('ep-modal').classList.contains('show'))  { closeEpModal(); return; }
+  if (document.getElementById('vod-modal').classList.contains('show')) { closeVodModal(); return; }
+  if (document.getElementById('sc-modal').classList.contains('show'))  { hideScModal(); return; }
+  if (document.getElementById('player-page').classList.contains('show')) { backToApp(); return; }
+  // On main app, go back through history
+  if (navHistory.length > 0) {
+    const prev = navHistory.pop();
+    if (prev && prev.section) {
+      // Restore section+cat without re-fetching
+      SECTION = prev.section;
+      curCatId = prev.catId || 'all';
+      document.querySelectorAll('.hp-item').forEach(el =>
+        el.classList.toggle('active', el.dataset.sec === SECTION)
+      );
+      if (prev.items) {
+        allItems = prev.items;
+        visItems = prev.items;
+        renderItems(visItems);
+      }
+    }
+  }
+}
+
+// Wrap selectSection to push history
+const _origSelectSection = selectSection;
+// Override after definition — see monkey-patch below
+
+// ═══════════════════════════════════════════════════
+// FF / RW — Fast Forward & Rewind
+// ═══════════════════════════════════════════════════
+function seekFF() {
+  const v = document.getElementById('player-video');
+  if (v.duration && !isNaN(v.duration)) {
+    v.currentTime = Math.min(v.currentTime + 30, v.duration);
+  }
+  showOverlay();
+}
+
+function seekRW() {
+  const v = document.getElementById('player-video');
+  v.currentTime = Math.max((v.currentTime || 0) - 30, 0);
+  showOverlay();
+}
 function esc(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
