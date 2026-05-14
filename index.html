@@ -13,8 +13,8 @@
   --surface:#12121a;
   --surface2:#1a1a26;
   --border:#2a2a3e;
-  --accent:#e63946;
-  --accent2:#ff6b6b;
+  --accent:#0bc552c5;
+  --accent2:#06c069d0;
   --blue:#4361ee;
   --text:#f0f0f5;
   --muted:#6b6b8a;
@@ -1293,8 +1293,20 @@ function openPlayer(urls, resumePos) {
 function bindVideoEvents() {
   const v = document.getElementById('player-video');
   v.onwaiting  = () => showPlayerSpinner(true);
-  v.onplaying  = () => { showPlayerSpinner(false); isPlaying = true; document.getElementById('btn-pp').textContent = '⏸'; };
-  v.onpause    = () => { isPlaying = false; document.getElementById('btn-pp').textContent = '▶'; };
+  v.onplaying  = () => {
+    showPlayerSpinner(false);
+    isPlaying = true;
+    document.getElementById('btn-pp').textContent = '⏸';
+  };
+  // Only update UI on pause — do NOT call loadUrl fallback here
+  // The HLS error handler already manages fallback
+  v.onpause = () => {
+    // Ignore pause events fired during initial buffering (readyState < 3)
+    if (v.readyState >= 3) {
+      isPlaying = false;
+      document.getElementById('btn-pp').textContent = '▶';
+    }
+  };
   v.ontimeupdate = () => {
     updateSeekBar();
     if (isVOD) autoSavePos();
@@ -1302,6 +1314,10 @@ function bindVideoEvents() {
   v.onended = () => {
     isPlaying = false;
     document.getElementById('btn-pp').textContent = '▶';
+  };
+  v.onerror = () => {
+    // Native video error (non-HLS) — try next URL
+    if (!hls) loadUrl(playerUrlIdx + 1);
   };
 }
 
@@ -1353,7 +1369,6 @@ function loadUrl(idx) {
 
   } else {
     v.src = url;
-    v.load();
     const playPromise = v.play();
     if (playPromise) {
       playPromise
