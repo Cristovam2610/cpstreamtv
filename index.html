@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>CPStreamTV</title>
+<title>StreamTV</title>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;700&family=Source+Sans+3:wght@300;400;600&display=swap');
@@ -40,9 +40,7 @@ html,body{
   font-family:'Oswald',sans-serif;font-size:80px;font-weight:700;
   letter-spacing:6px;color:var(--text);
 }
-.boot-logo em{color:#4361ee;font-style:normal;}
-.hp-logo em{color:#4361ee;font-style:normal;}
-.login-card h1 em{color:#4361ee;font-style:normal;}
+.boot-logo em{color:var(--accent);font-style:normal;}
 .boot-bar{width:300px;height:3px;background:#1e1e2e;border-radius:3px;overflow:hidden;}
 .boot-fill{height:100%;background:var(--accent);width:0%;transition:width .4s ease;}
 .boot-msg{font-size:18px;color:var(--muted);letter-spacing:1px;}
@@ -114,7 +112,6 @@ html,body{
   font-family:'Oswald',sans-serif;font-size:22px;letter-spacing:3px;
   color:var(--text);white-space:nowrap;
 }
-.hp-logo em{color:#4361ee;font-style:normal;}
 .hp-logo em{color:var(--accent);font-style:normal;}
 .hp-nav{flex:1;padding:12px 0;overflow-y:auto;scrollbar-width:none;}
 .hp-item{
@@ -263,10 +260,9 @@ html,body{
   position:absolute;inset:0;
   background:linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 40%,rgba(0,0,0,.6) 100%);
   display:flex;flex-direction:column;justify-content:space-between;
-  padding:40px 56px;opacity:0;transition:opacity .3s;
-  pointer-events:none;  /* hidden = block no interaction */
+  padding:40px 56px;opacity:0;transition:opacity .3s;pointer-events:none;
 }
-#player-ui.vis{opacity:1;pointer-events:all;}  /* visible = fully interactive */
+#player-ui.vis{opacity:1;}
 
 #pl-top{display:flex;align-items:flex-start;gap:20px;}
 #pl-thumb{width:70px;height:70px;border-radius:10px;object-fit:contain;background:rgba(255,255,255,.06);flex-shrink:0;display:none;}
@@ -322,42 +318,29 @@ html,body{
 .resume-btn.sec{background:rgba(255,255,255,.15);}
 
 /* Seek bar */
-#pl-seek-area{display:block;}  /* always visible when in player */
-#pl-seek-wrap-outer{
-  padding:10px 0 4px;cursor:pointer;
-}
+#pl-seek-area{display:none;}
+#pl-seek-area.show{display:block;}
 #pl-seek-track{
-  width:100%;height:8px;background:rgba(255,255,255,.25);
-  border-radius:4px;cursor:pointer;position:relative;margin-bottom:10px;
-  /* Expand clickable area */
-  padding:10px 0;margin:-10px 0;box-sizing:content-box;
+  width:100%;height:5px;background:rgba(255,255,255,.2);
+  border-radius:3px;cursor:pointer;position:relative;margin-bottom:8px;
 }
-#pl-seek-fill{
-  height:8px;background:var(--accent);border-radius:4px;
-  pointer-events:none;position:relative;top:0;
-}
+#pl-seek-fill{height:100%;background:var(--accent);border-radius:3px;pointer-events:none;}
 #pl-seek-dot{
-  position:absolute;top:50%;width:20px;height:20px;
+  position:absolute;top:50%;width:16px;height:16px;
   background:#fff;border-radius:50%;transform:translate(-50%,-50%);
   pointer-events:none;left:0%;
-  box-shadow:0 2px 8px rgba(0,0,0,.5);
 }
-#pl-time{font-size:15px;color:rgba(255,255,255,.7);text-align:right;margin-top:4px;}
+#pl-time{font-size:14px;color:rgba(255,255,255,.6);text-align:right;}
 
-#pl-controls-wrap{display:flex;flex-direction:column;gap:12px;}
-#pl-bottom{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+#pl-bottom{display:flex;align-items:center;gap:16px;}
 .pl-btn{
-  width:56px;height:56px;background:rgba(255,255,255,.15);
-  border:1.5px solid rgba(255,255,255,.3);border-radius:50%;
+  width:56px;height:56px;background:rgba(255,255,255,.12);
+  border:1.5px solid rgba(255,255,255,.2);border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   font-size:22px;cursor:pointer;transition:all .15s;
-  user-select:none;-webkit-user-select:none;
-  /* Make sure clicks register */
-  position:relative;z-index:10;
 }
-.pl-btn:hover{background:var(--accent);border-color:var(--accent);transform:scale(1.1);}
-.pl-btn:active{transform:scale(.95);background:var(--accent);}
-#pl-pos{font-size:16px;color:rgba(255,255,255,.5);margin-left:4px;}
+.pl-btn:hover{background:var(--accent);border-color:var(--accent);}
+#pl-pos{font-size:16px;color:rgba(255,255,255,.5);margin-left:8px;}
 #pl-hint{margin-left:auto;font-size:13px;color:rgba(255,255,255,.4);text-align:right;line-height:1.9;}
 #pl-buf-bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.08);}
 #pl-buf-fill{height:100%;background:var(--accent);width:0%;transition:width .5s;}
@@ -493,7 +476,7 @@ html,body{
 
 <!-- BOOT -->
 <div id="boot">
-  <div class="boot-logo"><em>CP</em>Stream<span style="-webkit-text-fill-color:var(--text);color:var(--text)">TV</span></div>
+  <div class="boot-logo">STREAM<em>TV</em></div>
   <div class="boot-bar"><div class="boot-fill" id="bfill"></div></div>
   <div class="boot-msg" id="bmsg">Carregando...</div>
 </div>
@@ -501,11 +484,11 @@ html,body{
 <!-- LOGIN -->
 <div id="login-page">
   <div class="login-card">
-    <h1><em>CP</em>StreamTV</h1>
+    <h1>STREAM<em>TV</em></h1>
     <p>Acesse com seus dados do servidor IPTV</p>
     <div class="preset-btns">
-      <button class="preset-btn" onclick="setPreset('https://toppcard.fun')">toppcard.fun</button>
-      <button class="preset-btn" onclick="setPreset('https://streams4k.xyz')">streams4k.xyz</button>
+      <button class="preset-btn" onclick="setPreset('http://toppcard.fun')">toppcard.fun</button>
+      <button class="preset-btn" onclick="setPreset('http://streams4k.xyz')">streams4k.xyz</button>
     </div>
     <div class="form-field">
       <label>Servidor</label>
@@ -529,7 +512,7 @@ html,body{
 
   <!-- Home panel (section selector) -->
   <div id="home-panel">
-    <div class="hp-logo"><em>CP</em>StreamTV</div>
+    <div class="hp-logo">STREAM<em>TV</em></div>
     <div class="hp-nav">
       <div class="hp-item active" data-sec="live" onclick="selectSection('live')">
         <span class="hp-icon">📺</span>
@@ -603,30 +586,27 @@ html,body{
       <div id="pl-actions">
         <button class="pl-action-btn" id="fav-btn" onclick="toggleFavCurrent()">☆ Favorito</button>
         <button class="pl-action-btn" id="zoom-btn" onclick="cycleZoom()">⛶ Zoom</button>
-        <button class="pl-action-btn" onclick="navBack()">← Voltar</button>
+        <button class="pl-action-btn" onclick="backToApp()">← Voltar</button>
       </div>
     </div>
     <div id="pl-center">
       <div id="pl-spinner"></div>
       <div id="pl-err-msg"></div>
     </div>
-    <div id="pl-controls-wrap">
+    <div style="display:flex;flex-direction:column;gap:10px;">
       <div id="pl-seek-area">
-        <div id="pl-seek-track" id="seek-track-el" onclick="seekBarClick(event)">
+        <div id="pl-seek-track" onclick="seekBarClick(event)">
           <div id="pl-seek-fill"></div>
           <div id="pl-seek-dot"></div>
         </div>
         <div id="pl-time">00:00 / 00:00</div>
       </div>
       <div id="pl-bottom">
-        <div class="pl-btn" id="btn-prev" onclick="prevItem()" title="Canal anterior">⏮</div>
-        <div class="pl-btn" id="btn-rw"   onclick="seekRW()"   title="Retroceder 30s">⏪</div>
-        <div class="pl-btn" id="btn-pp"   onclick="togglePlay()">⏸</div>
-        <div class="pl-btn" id="btn-ff"   onclick="seekFF()"   title="Avançar 30s">⏩</div>
-        <div class="pl-btn" id="btn-next" onclick="nextItem()" title="Próximo canal">⏭</div>
-        <div class="pl-btn" id="btn-fs"   onclick="toggleFullscreen()" title="Tela cheia">⛶</div>
+        <div class="pl-btn" id="btn-prev" onclick="prevItem()">⏮</div>
+        <div class="pl-btn" id="btn-pp" onclick="togglePlay()">⏸</div>
+        <div class="pl-btn" id="btn-next" onclick="nextItem()">⏭</div>
         <div id="pl-pos"></div>
-        <div id="pl-hint">F = Fav &nbsp;|&nbsp; Z = Zoom &nbsp;|&nbsp; ◄► = ±30s</div>
+        <div id="pl-hint">BACK = Voltar &nbsp;|&nbsp; F = Favorito &nbsp;|&nbsp; Z = Zoom &nbsp;|&nbsp; ▲▼ = Trocar canal</div>
       </div>
     </div>
   </div>
@@ -736,7 +716,7 @@ window.addEventListener('load', async () => {
     showApp();
     selectSection('live');
   } else {
-    document.getElementById('f-server').value = 'https://toppcard.fun';
+    document.getElementById('f-server').value = 'http://toppcard.fun';
     showLogin();
   }
 });
@@ -857,10 +837,6 @@ const SECTION_META = {
 };
 
 async function selectSection(sec) {
-  // Push current state to history before switching
-  if (SECTION && SECTION !== sec && document.getElementById('app').classList.contains('show')) {
-    navHistory.push({ section: SECTION, catId: curCatId, items: allItems.slice() });
-  }
   SECTION = sec;
   curCatId = 'all';
   curItemIdx = 0;
@@ -922,10 +898,6 @@ function renderCats(cats) {
 }
 
 async function loadItems(catId) {
-  // Push current category state to history
-  if (curCatId !== catId && allItems.length) {
-    navHistory.push({ section: SECTION, catId: curCatId, items: allItems.slice() });
-  }
   curCatId = catId;
   curItemIdx = 0;
   document.getElementById('search-input').value = '';
@@ -1346,7 +1318,7 @@ function loadUrl(idx) {
     }
   }
 
-  // Video events — identical to v4 working version
+  // Video events
   v.onwaiting = () => showPlayerSpinner(true);
   v.onplaying = () => showPlayerSpinner(false);
   v.ontimeupdate = () => {
@@ -1416,26 +1388,14 @@ function nextItem() {
 }
 
 function showOverlay() {
-  const ui = document.getElementById('player-ui');
-  ui.classList.add('vis');
+  document.getElementById('player-ui').classList.add('vis');
   clearTimeout(overlayTimer);
-  overlayTimer = setTimeout(() => ui.classList.remove('vis'), 4000);
+  overlayTimer = setTimeout(() =>
+    document.getElementById('player-ui').classList.remove('vis'), 5000);
 }
 
-function toggleOverlay() {
-  const ui = document.getElementById('player-ui');
-  if (ui.classList.contains('vis')) {
-    ui.classList.remove('vis');
-    clearTimeout(overlayTimer);
-  } else {
-    showOverlay();
-  }
-}
-
-// Click on video itself (not on UI controls) toggles overlay
-document.getElementById('player-video').addEventListener('click', toggleOverlay);
-// Moving mouse over player always shows overlay
 document.getElementById('player-page').addEventListener('mousemove', showOverlay);
+document.getElementById('player-page').addEventListener('click', showOverlay);
 
 // ═══════════════════════════════════════════════════
 // ZOOM
@@ -1470,32 +1430,20 @@ function applyZoom() {
 // ═══════════════════════════════════════════════════
 function updateSeekBar() {
   const v = document.getElementById('player-video');
-  const hasTime = v.duration && !isNaN(v.duration) && v.duration > 0;
-  // Show dot and fill only when there's a duration (VOD), hide for live
-  document.getElementById('pl-seek-dot').style.display  = hasTime ? 'block' : 'none';
-  document.getElementById('pl-seek-fill').style.width   = hasTime ? ((v.currentTime / v.duration) * 100) + '%' : '0%';
-  if (hasTime) {
-    document.getElementById('pl-seek-dot').style.left   = ((v.currentTime / v.duration) * 100) + '%';
-    document.getElementById('pl-time').textContent      = fmtTime(v.currentTime) + ' / ' + fmtTime(v.duration);
-  } else {
-    document.getElementById('pl-time').textContent = '';
-  }
-  // Buffer bar
-  if (v.buffered.length) {
-    const pct = (v.buffered.end(v.buffered.length - 1) / (v.duration || 1)) * 100;
-    document.getElementById('pl-buf-fill').style.width = Math.min(pct, 100) + '%';
-  }
+  const wrap = document.getElementById('pl-seek-area');
+  if (!v.duration || isNaN(v.duration)) { wrap.classList.remove('show'); return; }
+  wrap.classList.add('show');
+  const pct = (v.currentTime / v.duration) * 100;
+  document.getElementById('pl-seek-fill').style.width = pct + '%';
+  document.getElementById('pl-seek-dot').style.left   = pct + '%';
+  document.getElementById('pl-time').textContent = fmtTime(v.currentTime) + ' / ' + fmtTime(v.duration);
 }
 
 function seekBarClick(e) {
   const v = document.getElementById('player-video');
-  if (!v.duration || isNaN(v.duration)) return;
-  const track = document.getElementById('pl-seek-track');
-  const r = track.getBoundingClientRect();
-  const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-  v.currentTime = pct * v.duration;
-  e.stopPropagation();
-  showOverlay();
+  if (!v.duration) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  v.currentTime = ((e.clientX - r.left) / r.width) * v.duration;
 }
 
 function fmtTime(s) {
@@ -1578,14 +1526,19 @@ document.addEventListener('keydown', e => {
   if (inPlayer) {
     e.preventDefault();
     showOverlay();
-    if (k === 'Escape' || k === 'Backspace') navBack();
+    if (k === 'Escape' || k === 'Backspace') backToApp();
     else if (k === ' ' || k === 'Enter') togglePlay();
     else if (k === 'ArrowUp')   prevItem();
     else if (k === 'ArrowDown') nextItem();
     else if (k === 'f' || k === 'F') toggleFavCurrent();
     else if (k === 'z' || k === 'Z') cycleZoom();
-    else if (k === 'ArrowRight') seekFF();
-    else if (k === 'ArrowLeft')  seekRW();
+    else if (k === 'ArrowRight' && isVOD) {
+      const v = document.getElementById('player-video');
+      if (v.duration) v.currentTime = Math.min(v.currentTime + 10, v.duration);
+    } else if (k === 'ArrowLeft' && isVOD) {
+      const v = document.getElementById('player-video');
+      v.currentTime = Math.max(v.currentTime - 10, 0);
+    }
   }
 });
 
@@ -1597,7 +1550,9 @@ function registerTizenKeys() {
 }
 if (window.tizen) {
   window.addEventListener('tizenhwkey', e => {
-    if (e.keyName === 'back') navBack();
+    if (e.keyName === 'back') {
+      if (document.getElementById('player-page').classList.contains('show')) backToApp();
+    }
   });
 }
 
@@ -1608,90 +1563,8 @@ function showScModal() { document.getElementById('sc-modal').classList.add('show
 function hideScModal() { document.getElementById('sc-modal').classList.remove('show'); }
 
 // ═══════════════════════════════════════════════════
-// NAVIGATION HISTORY — back button goes step by step
+// UTILS
 // ═══════════════════════════════════════════════════
-// Steps: 'login' → 'home' → 'section' → 'category' → 'player' / 'vod-modal' / 'ep-modal'
-const navHistory = [];
-
-function navPush(step) { navHistory.push(step); }
-
-function navBack() {
-  // Step 1: close episode modal
-  if (document.getElementById('ep-modal').classList.contains('show')) {
-    closeEpModal(); return;
-  }
-  // Step 2: close VOD modal
-  if (document.getElementById('vod-modal').classList.contains('show')) {
-    closeVodModal(); return;
-  }
-  // Step 3: close shortcut modal
-  if (document.getElementById('sc-modal').classList.contains('show')) {
-    hideScModal(); return;
-  }
-  // Step 4: exit player back to app
-  if (document.getElementById('player-page').classList.contains('show')) {
-    backToApp(); return;
-  }
-  // Step 5: go back through nav history (section/category)
-  if (navHistory.length > 0) {
-    const prev = navHistory.pop();
-    if (prev) {
-      SECTION  = prev.section;
-      curCatId = prev.catId || 'all';
-      // Restore left nav highlight
-      document.querySelectorAll('.hp-item').forEach(el =>
-        el.classList.toggle('active', el.dataset.sec === SECTION)
-      );
-      // Restore category highlight
-      document.querySelectorAll('.cat-item').forEach(el =>
-        el.classList.toggle('active', el.dataset.id === curCatId)
-      );
-      if (prev.items && prev.items.length) {
-        allItems = prev.items;
-        visItems = prev.items;
-        renderItems(visItems);
-      }
-    }
-    return;
-  }
-  // Step 6: nothing left — show logout confirmation? Just stay on home.
-}
-
-// Wrap selectSection to push history
-const _origSelectSection = selectSection;
-// Override after definition — see monkey-patch below
-
-// ═══════════════════════════════════════════════════
-// FF / RW — Fast Forward & Rewind
-// ═══════════════════════════════════════════════════
-function toggleFullscreen() {
-  const el = document.getElementById('player-page');
-  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
-    if (req) req.call(el);
-  } else {
-    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
-    if (exit) exit.call(document);
-  }
-  showOverlay();
-}
-
-function seekFF() {
-  const v = document.getElementById('player-video');
-  if (!isNaN(v.duration) && v.duration > 0) {
-    v.currentTime = Math.min(v.currentTime + 30, v.duration);
-  } else {
-    // Live stream — try to skip forward in buffer
-    if (v.buffered.length) v.currentTime = Math.min(v.currentTime + 30, v.buffered.end(v.buffered.length - 1));
-  }
-  showOverlay();
-}
-
-function seekRW() {
-  const v = document.getElementById('player-video');
-  v.currentTime = Math.max((v.currentTime || 0) - 30, 0);
-  showOverlay();
-}
 function esc(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
